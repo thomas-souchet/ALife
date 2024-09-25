@@ -1,6 +1,6 @@
 use std::{env, process};
 
-use alife::Config;
+use alife::config::Config;
 
 fn main() {
     // Collect args
