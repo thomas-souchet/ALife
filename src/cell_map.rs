@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::mem;
 
 struct CellMap {
     w: u32,
@@ -35,8 +36,33 @@ impl CellMap {
         panic!("TODO: Not implemented")
     }
 
-    fn generate_next(&self) -> &Vec<Vec<bool>> {
-        panic!("TODO: Not implemented");
+    fn generate_next(&mut self) -> &Vec<Vec<bool>> {
+        for i in 0..self.actual_generation.len() {
+            for j in 0..self.actual_generation[i].len() {
+                let (i, j) = (i as i32, j as i32);
+                // Count alive cells
+                let mut alive = 0;
+                let coord = [(i-1, j-1), (i-1, j), (i-1, j+1), (i, j-1), (i, j+1), (i+1, j-1), (i+1, j), (i+1, j+1)];
+                for (y, x) in coord {
+                    if let Some(row) = self.actual_generation.get(y as usize) {
+                        if let Some(v) = row.get(x as usize) {
+                            if *v { alive += 1 }
+                        }
+                    }
+                }
+
+                // Apply game rules
+                let (i, j) = (i as usize, j as usize);
+                self.next_generation[i][j] = match (self.actual_generation[i][j], alive) {
+                    (true, 2) | (true, 3) => true,
+                    (false, 3) => true,
+                    _ => false,
+                }
+            }
+        }
+        // Swap pointers
+        mem::swap(&mut self.actual_generation, &mut self.next_generation);
+
         &self.actual_generation
     }
 
@@ -90,8 +116,8 @@ mod tests {
 
     // Test CellMap.generate_next
     #[test]
-    fn test_generate_next_1() -> Result<(), String> {
-        let c = CellMap::new(
+    fn test_generate_next_figure() -> Result<(), String> {
+        let mut c = CellMap::new(
             vec![
                 vec![false, true, false],
                 vec![true, true, false],
@@ -104,6 +130,104 @@ mod tests {
             vec![true, true, false],
             vec![true, false, false],
             vec![true, true, true]
+        ]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_next_blinker() -> Result<(), String> {
+        // Test for a blinker pattern
+        let mut c = CellMap::new(
+            vec![
+                vec![false, false, false, false, false],
+                vec![false, false, true, false, false],
+                vec![false, false, true, false, false],
+                vec![false, false, true, false, false],
+                vec![false, false, false, false, false]]
+        )?;
+
+        let result = c.generate_next();
+
+        assert_eq!(result, &vec![
+            vec![false, false, false, false, false],
+            vec![false, false, false, false, false],
+            vec![false, true, true, true, false],
+            vec![false, false, false, false, false],
+            vec![false, false, false, false, false]
+        ]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_next_glider() -> Result<(), String> {
+        // Test for a glider pattern
+        let mut c = CellMap::new(
+            vec![
+                vec![false, false, false, false, false],
+                vec![false, false, true, false, false],
+                vec![false, false, false, true, false],
+                vec![false, true, true, true, false],
+                vec![false, false, false, false, false]]
+        )?;
+
+        let result = c.generate_next();
+
+        assert_eq!(result, &vec![
+            vec![false, false, false, false, false],
+            vec![false, false, false, false, false],
+            vec![false, true, false, true, false],
+            vec![false, false, true, true, false],
+            vec![false, false, true, false, false]
+        ]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_next_beehive() -> Result<(), String> {
+        // Test for a beehive pattern (stable)
+        let mut c = CellMap::new(
+            vec![
+                vec![false, false, false, false, false, false],
+                vec![false, false, true, true, false, false],
+                vec![false, true, false, false, true, false],
+                vec![false, false, true, true, false, false],
+                vec![false, false, false, false, false, false]]
+        )?;
+
+        let result = c.generate_next();
+
+        assert_eq!(result, &vec![
+            vec![false, false, false, false, false, false],
+            vec![false, false, true, true, false, false],
+            vec![false, true, false, false, true, false],
+            vec![false, false, true, true, false, false],
+            vec![false, false, false, false, false, false]
+        ]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_next_toad() -> Result<(), String> {
+        // Test for a toad pattern (period 2 oscillator)
+        let mut c = CellMap::new(
+            vec![
+                vec![false, false, false, false, false, false],
+                vec![false, false, false, false, false, false],
+                vec![false, false, true, true, true, false],
+                vec![false, true, true, true, false, false],
+                vec![false, false, false, false, false, false],
+                vec![false, false, false, false, false, false]]
+        )?;
+
+        let result = c.generate_next();
+
+        assert_eq!(result, &vec![
+            vec![false, false, false, false, false, false],
+            vec![false, false, false, true, false, false],
+            vec![false, true, false, false, true, false],
+            vec![false, true, false, false, true, false],
+            vec![false, false, true, false, false, false],
+            vec![false, false, false, false, false, false]
         ]);
         Ok(())
     }
