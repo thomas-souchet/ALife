@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::mem;
+use std::{fs, mem};
 
 struct CellMap {
     w: u32,
@@ -28,8 +28,37 @@ impl CellMap {
         })
     }
 
-    fn from_rle(file_name: &str) -> CellMap {
-        panic!("TODO: Not implemented")
+    fn from_rle(file_name: &str) -> Result<CellMap, Box<dyn Error>> {
+        // File
+        if !file_name.contains(".rle") {
+            return Err(Box::new("The input file must be a Run Length Encoded (.rle) file"));
+        }
+        let content = fs::read_to_string(file_name)?;
+        // Cleaning
+        let content = CellMap::remove_comment_lines(content);
+        // Verify syntax
+
+        // Decode
+        panic!("TODO: Not implemented");
+        let mut find_size = false;
+        for line in content.lines() {
+            // Get size
+            let mut size: (u32, u32) = (0, 0);
+            if line.starts_with('x') && !find_size && line.len() >= 12 {
+                for c in line {
+                    if let Ok(n) = c.parse() {
+                        size.0 = n;
+                    }
+                }
+            }
+            for c in line {
+                if c == 'b' {
+
+                } else if c == 'o' {
+
+                }
+            }
+        }
     }
 
     fn to_rle(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
@@ -68,6 +97,14 @@ impl CellMap {
 
     fn actual_generation(&self) -> &Vec<Vec<bool>> {
         &self.actual_generation
+    }
+
+    fn remove_comment_lines(content: String) -> String {
+        content
+            .lines()
+            .filter(|line| !line.trim_start().starts_with('#'))
+            .collect::<Vec<&str>>()
+            .join("\n")
     }
 }
 
