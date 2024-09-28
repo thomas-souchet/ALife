@@ -73,9 +73,24 @@ impl RLE {
     }
 
     fn export(&self) -> String {
-        panic!("TODO: Not implemented");
+        // Add comments
+        let mut content = self.comments.join("\n");
+        // Add x, y and rule
+        if let Some(r) = &self.rule {
+            content += &format!("\nx = {}, y = {}, rule = {}\n", self.x, self.y, r);
+        } else {
+            content += &format!("\nx = {}, y = {}\n", self.x, self.y);
+        }
+        // Add data
+        content += &self.data;
+        content
     }
 }
+
+
+// --------
+// Tests
+// --------
 
 #[cfg(test)]
 mod tests {
@@ -145,5 +160,47 @@ x = 36, y = 9, rule = B3/S23
             Err(error) => assert_eq!(error, "Content line not found or incorrect. (Help: all content must be on one line)"),
         }
         Ok(())
+    }
+
+    // Test RLE.export
+
+    #[test]
+    fn test_export_1() {
+        let rle = RLE {
+            comments: vec!["#C Game of Life".to_string()],
+            x: 36,
+            y: 9,
+            rule: Some("B3/S23".to_string()),
+            data: "24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!".to_string()
+        };
+
+        let result = rle.export();
+
+        assert_eq!(
+            result,
+            "#C Game of Life\nx = 36, y = 9, rule = B3/S23\n24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!"
+        )
+    }
+
+    #[test]
+    fn test_export_2() {
+        let rle = RLE {
+            comments: vec![
+                "#N Gosper glider gun".to_string(),
+                "#C This was the first gun discovered.".to_string(),
+                "#C As its name suggests, it was discovered by Bill Gosper.".to_string()
+            ],
+            x: 36,
+            y: 9,
+            rule: Some("B3/S23".to_string()),
+            data: "24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!".to_string()
+        };
+
+        let result = rle.export();
+
+        assert_eq!(
+            result,
+            "#N Gosper glider gun\n#C This was the first gun discovered.\n#C As its name suggests, it was discovered by Bill Gosper.\nx = 36, y = 9, rule = B3/S23\n24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!"
+        )
     }
 }
