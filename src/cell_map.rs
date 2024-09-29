@@ -3,14 +3,14 @@ use std::{fs, mem};
 use crate::rle::RLE;
 
 pub struct CellMap {
-    w: u32,
-    h: u32,
-    actual_generation: Vec<Vec<bool>>,
+    pub w: u32,
+    pub h: u32,
+    pub actual_generation: Vec<Vec<bool>>,
     next_generation: Vec<Vec<bool>>,
 }
 
 impl CellMap {
-    fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
+    pub fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
         let col_size = source.len();
         if col_size == 0 {
             return Err("The source can't be empty")
@@ -73,10 +73,6 @@ impl CellMap {
         // Swap pointers
         mem::swap(&mut self.actual_generation, &mut self.next_generation);
 
-        &self.actual_generation
-    }
-
-    fn actual_generation(&self) -> &Vec<Vec<bool>> {
         &self.actual_generation
     }
 }
