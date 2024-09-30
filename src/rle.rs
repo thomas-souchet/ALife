@@ -74,6 +74,7 @@ impl RLE {
     }
 
     fn from_cell_map(c: &CellMap, comments: Option<&Vec<String>>) -> RLE {
+        //c.trim();
         let mut data = String::new();
         let mut first = true;
 

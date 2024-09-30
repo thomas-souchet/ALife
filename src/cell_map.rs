@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::{fs, mem};
+use std::ops::Index;
 use crate::rle::RLE;
 
 pub struct CellMap {
@@ -10,6 +11,31 @@ pub struct CellMap {
 }
 
 impl CellMap {
+    // Methods
+
+    fn trim(&mut self) {
+        if self.actual_generation.len() > 0 {
+            while !self.actual_generation[0].contains(&true) {
+                self.actual_generation.remove(0);
+                self.next_generation.remove(0);
+            }
+
+            let mut last =  self.actual_generation.len() - 1;
+
+            while !self.actual_generation[last].contains(&true) {
+                self.actual_generation.remove(last);
+                self.next_generation.remove(last);
+                last -= 1;
+            }
+        }
+
+        self.h = self.actual_generation.len() as u32;
+    }
+
+    pub fn auto_crop(&self) -> CellMap {
+        panic!("TODO: Not implemented")
+    }
+
     pub fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
         let col_size = source.len();
         if col_size == 0 {
@@ -236,5 +262,37 @@ mod tests {
             vec![false, false, false, false, false, false]
         ]);
         Ok(())
+    }
+
+    // Test CellMap.trim
+
+    #[test]
+    fn test_trim() {
+        let mut c = CellMap::new(vec![
+            vec![false, false, false],
+            vec![false, false, false],
+            vec![false, true, false],
+            vec![false, false, false],
+            vec![false, false, true],
+            vec![false, false, false],
+            vec![true, true, true],
+            vec![false, false, false],
+            vec![false, false, false],
+        ]).unwrap();
+
+        c.trim();
+
+        assert_eq!(c.actual_generation,
+                   vec![
+                       vec![false, true, false],
+                       vec![false, false, false],
+                       vec![false, false, true],
+                       vec![false, false, false],
+                       vec![true, true, true],
+                   ]
+        );
+        assert_eq!(c.w, 3);
+        assert_eq!(c.h, 5);
+        assert_eq!(c.next_generation.len(), 5);
     }
 }
