@@ -11,7 +11,7 @@ pub struct CellMap {
 }
 
 impl CellMap {
-    // Methods
+    // Utilities
 
     fn trim(&mut self) {
         if self.actual_generation.len() > 0 {
@@ -32,8 +32,47 @@ impl CellMap {
         self.h = self.actual_generation.len() as u32;
     }
 
+    // Methods
+
     pub fn auto_crop(&self) -> CellMap {
-        panic!("TODO: Not implemented")
+        let (mut start_y, mut end_y): (usize, usize) = ((self.h - 1) as usize, 0);
+        let (mut start_x, mut end_x): (usize, usize) = ((self.w - 1) as usize, 0);
+
+        if let Some(index) = self.actual_generation.iter().position(|y| y.contains(&true)) {
+            if index < start_y { start_y = index }
+        }
+        if let Some(index) = self.actual_generation.iter().rposition(|y| y.contains(&true)) {
+            if index > end_y { end_y = index }
+        }
+
+        for i in start_y..=end_y {
+            if let Some(index) = self.actual_generation[i].iter().position(|x| *x) {
+                if index < start_x { start_x = index }
+            }
+            if let Some(index) = self.actual_generation[i].iter().rposition(|x| *x) {
+                if index > end_x { end_x = index }
+            }
+        }
+
+        // Copy only the cropped part
+        let (w, h) = (end_x - start_x + 1, end_y - start_y + 1);
+
+        let mut new_actual_generation = Vec::with_capacity(h);
+        for i in start_y..=end_y {
+            let mut line = Vec::with_capacity(w);
+            for j in start_x..=end_x {
+                line.push(self.actual_generation[i][j]);
+            }
+            new_actual_generation.push(line);
+        }
+
+
+        CellMap {
+            w: w as u32,
+            h: h as u32,
+            actual_generation: new_actual_generation,
+            next_generation: vec![vec![false; w]; h]
+        }
     }
 
     pub fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
@@ -56,6 +95,9 @@ impl CellMap {
     }
 
     fn from_rle(file_name: &str) -> Result<CellMap, &'static str> {
+        /*
+         * This method will be removed or the prototype will be modified
+         */
         // File
         if !file_name.contains(".rle") {
             return Err("The input file must be a Run Length Encoded (.rle) file");
@@ -102,6 +144,11 @@ impl CellMap {
         &self.actual_generation
     }
 }
+
+
+// --------
+// Tests
+// --------
 
 #[cfg(test)]
 mod tests {
@@ -264,25 +311,25 @@ mod tests {
         Ok(())
     }
 
-    // Test CellMap.trim
+    // Test CellMap.auto_crop
 
     #[test]
-    fn test_trim() {
-        let mut c = CellMap::new(vec![
-            vec![false, false, false],
-            vec![false, false, false],
-            vec![false, true, false],
-            vec![false, false, false],
-            vec![false, false, true],
-            vec![false, false, false],
-            vec![true, true, true],
-            vec![false, false, false],
-            vec![false, false, false],
+    fn test_auto_crop() {
+        let c = CellMap::new(vec![
+            vec![false, false, false, false, false],
+            vec![false, false, false, false, false],
+            vec![false, false, true, false, false],
+            vec![false, false, false, false, false],
+            vec![false, false, false, true, false],
+            vec![false, false, false, false, false],
+            vec![false, true, true, true, false],
+            vec![false, false, false, false, false],
+            vec![false, false, false, false, false],
         ]).unwrap();
 
-        c.trim();
+        let cropped_c = c.auto_crop();
 
-        assert_eq!(c.actual_generation,
+        assert_eq!(cropped_c.actual_generation,
                    vec![
                        vec![false, true, false],
                        vec![false, false, false],
@@ -291,8 +338,9 @@ mod tests {
                        vec![true, true, true],
                    ]
         );
-        assert_eq!(c.w, 3);
-        assert_eq!(c.h, 5);
-        assert_eq!(c.next_generation.len(), 5);
+        assert_eq!(cropped_c.w, 3);
+        assert_eq!(cropped_c.h, 5);
+        assert_eq!(cropped_c.next_generation.len(), 5);
+        assert_eq!(cropped_c.next_generation[0].len(), 3);
     }
 }
