@@ -107,7 +107,7 @@ impl CellMap {
         });
         // RLE
         let rle = RLE::parse(content)?;
-        Ok(rle.to_cell_map())
+        Ok(rle.to_cell_map()?)
     }
 
     fn to_rle(&self, file_name: &str) -> Result<(), Box<dyn Error>> {

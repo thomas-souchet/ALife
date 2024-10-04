@@ -135,21 +135,76 @@ impl RLE {
         }
     }
 
-    pub fn to_cell_map(&self) -> CellMap {
+    pub fn to_cell_map(&self) -> Result<CellMap, &'static str> {
+        // TODO :
+        // - Refactor
+        // - Split the code into functions
+
         let mut map = vec![vec![false; self.x as usize]; self.y as usize];
 
         let mut cleaned_data = self.data.replace(" ", "");
         cleaned_data.pop();
 
         let all_lines: Vec<&str> = cleaned_data.split("$").collect();
+        let mut all_lines_parsed: Vec<Vec<(u32, bool)>> = Vec::new();
 
         for line in all_lines {
+            let mut line_parsed: Vec<(u32, bool)> = Vec::new();
+            let mut number_construct = String::new();
             for c in line.chars() {
-                // TODO
+                if c.is_ascii_digit() {
+                    number_construct.push(c);
+                } else if c == 'b' || c == 'o' {
+                    let factor: u32 = if !number_construct.is_empty() {
+                        if let Ok(n) = number_construct.parse() {
+                            n
+                        } else {
+                            return Err("Error while parsing RLE file: Number parsing")
+                        }
+                    } else {
+                        1
+                    };
+
+                    line_parsed.push((factor, if c == 'o' { true } else { false }));
+                    number_construct = String::new();
+                } else {
+                    return Err("Error while parsing RLE file: Unknown character")
+                }
+            }
+
+            let is_last_line_empty = line_parsed.is_empty();
+            if !is_last_line_empty { all_lines_parsed.push(line_parsed) }
+
+            if !number_construct.is_empty() {
+                if let Ok(n) = number_construct.parse::<u32>() {
+                    let count_empty_lines = if is_last_line_empty { n } else { n-1 };
+                    for _ in 0..count_empty_lines {
+                        all_lines_parsed.push(vec![(self.x, false)]);
+                    }
+                } else {
+                    return Err("Error while parsing RLE file: Number parsing")
+                }
             }
         }
 
-        CellMap::new(map).unwrap()
+        // Add lines parsed to final map
+        for i in 0..map.len() {
+            for j in 0..map[i].len() {
+                if all_lines_parsed[i].is_empty() {
+                    break
+                }
+
+                map[i][j] = all_lines_parsed[i][0].1;
+
+                if all_lines_parsed[i][0].0 > 1 {
+                    all_lines_parsed[i][0].0 -= 1;
+                } else {
+                    all_lines_parsed[i].remove(0);
+                }
+            }
+        }
+
+        Ok(CellMap::new(map)?)
     }
 
     pub fn export(&self) -> String {
@@ -169,7 +224,7 @@ impl RLE {
 
     pub fn file_to_cell_map(file_content: String) -> Result<CellMap, &'static str> {
         let rle = Self::parse(file_content)?;
-        Ok(rle.to_cell_map())
+        Ok(rle.to_cell_map()?)
     }
 
     pub fn cell_map_to_file(c: &CellMap, comments: Option<&Vec<String>>) -> String {
@@ -184,9 +239,6 @@ impl RLE {
 
 #[cfg(test)]
 mod tests {
-    use std::arch::is_aarch64_feature_detected;
-    use std::arch::x86_64::_mm256_floor_pd;
-    use std::env::var;
     use super::*;
 
     // Test RLE::remove_and_collect_comments
@@ -402,7 +454,7 @@ x = 36, y = 9, rule = B3/S23
             vec![true, true, true],
         ]).unwrap();
 
-        let result = rle.to_cell_map();
+        let result = rle.to_cell_map().unwrap();
 
         assert_eq!(result.w, cell_map.w);
         assert_eq!(result.h, cell_map.h);
@@ -414,24 +466,28 @@ x = 36, y = 9, rule = B3/S23
         let rle = RLE {
             comments: vec![],
             x: 11,
-            y: 15,
+            y: 14,
             rule: None,
             data: String::from("b o 2 $10bo$10$3o!")
         };
 
         let false_vector = vec![false; 11];
-        let mut map = vec![false_vector; 15];
+        let mut map = vec![false_vector; 14];
         map[0][1] = true;
         map[2][10] = true;
-        map[14][0] = true;
-        map[14][1] = true;
-        map[14][2] = true;
+        map[13][0] = true;
+        map[13][1] = true;
+        map[13][2] = true;
         let cell_map = CellMap::new(map).unwrap();
 
-        let result = rle.to_cell_map();
+        let result = rle.to_cell_map().unwrap();
 
         assert_eq!(result.w, cell_map.w);
         assert_eq!(result.h, cell_map.h);
         assert_eq!(result.actual_generation, cell_map.actual_generation);
     }
+
+    // Test RLE::file_to_cell_map
+
+    // TODO
 }
