@@ -97,6 +97,66 @@ impl RLE {
         }
     }
 
+    fn lines_to_map(&self, all_lines: &mut Vec<Vec<(u32, bool)>>) -> Vec<Vec<bool>> {
+        let mut map = vec![vec![false; self.x as usize]; self.y as usize];
+
+        for i in 0..map.len() {
+            for j in 0..map[i].len() {
+                map[i][j] = all_lines[i][0].1;
+                if all_lines[i][0].0 > 1 {
+                    all_lines[i][0].0 -= 1;
+                } else {
+                    all_lines[i].remove(0);
+                    if all_lines[i].is_empty() { break }
+                }
+            }
+        }
+
+        map
+    }
+
+    fn process_file_lines(&self, all_lines: &Vec<&str>) -> Result<Vec<Vec<(u32, bool)>>, &'static str> {
+        let mut all_lines_parsed: Vec<Vec<(u32, bool)>> = Vec::new();
+
+        for line in all_lines {
+            let mut line_parsed: Vec<(u32, bool)> = Vec::new();
+            let mut number_construct = String::new();
+
+            for c in line.chars() {
+                if c.is_ascii_digit() {
+                    number_construct.push(c);
+                } else if c == 'b' || c == 'o' {
+                    let factor: u32 = if !number_construct.is_empty() {
+                        number_construct.parse()
+                            .map_err(|_| "Error while parsing RLE file: Number parsing")?
+                    } else {
+                        1
+                    };
+
+                    line_parsed.push((factor, if c == 'o' { true } else { false }));
+                    number_construct = String::new();
+                } else {
+                    return Err("Error while parsing RLE file: Unknown character")
+                }
+            }
+
+            let is_last_line_empty = line_parsed.is_empty();
+            if !is_last_line_empty {
+                all_lines_parsed.push(line_parsed);
+            }
+
+            if !number_construct.is_empty() {
+                let n = number_construct.parse::<u32>()
+                    .map_err(|_| "Error while parsing RLE file: Number parsing")?;
+
+                let count_empty_lines = if is_last_line_empty { n } else { n - 1 };
+                all_lines_parsed.extend(std::iter::repeat(vec![(self.x, false)]).take(count_empty_lines as usize));
+            }
+        }
+
+        Ok(all_lines_parsed)
+    }
+
     // ---------
 
     pub fn parse(mut file_content: String) -> Result<RLE, &'static str> {
@@ -136,75 +196,15 @@ impl RLE {
     }
 
     pub fn to_cell_map(&self) -> Result<CellMap, &'static str> {
-        // TODO :
-        // - Refactor
-        // - Split the code into functions
-
-        let mut map = vec![vec![false; self.x as usize]; self.y as usize];
-
         let mut cleaned_data = self.data.replace(" ", "");
+        // Remove "!"
         cleaned_data.pop();
 
         let all_lines: Vec<&str> = cleaned_data.split("$").collect();
-        let mut all_lines_parsed: Vec<Vec<(u32, bool)>> = Vec::new();
 
-        for line in all_lines {
-            let mut line_parsed: Vec<(u32, bool)> = Vec::new();
-            let mut number_construct = String::new();
-            for c in line.chars() {
-                if c.is_ascii_digit() {
-                    number_construct.push(c);
-                } else if c == 'b' || c == 'o' {
-                    let factor: u32 = if !number_construct.is_empty() {
-                        if let Ok(n) = number_construct.parse() {
-                            n
-                        } else {
-                            return Err("Error while parsing RLE file: Number parsing")
-                        }
-                    } else {
-                        1
-                    };
+        let mut all_lines_parsed = self.process_file_lines(&all_lines)?;
 
-                    line_parsed.push((factor, if c == 'o' { true } else { false }));
-                    number_construct = String::new();
-                } else {
-                    return Err("Error while parsing RLE file: Unknown character")
-                }
-            }
-
-            let is_last_line_empty = line_parsed.is_empty();
-            if !is_last_line_empty { all_lines_parsed.push(line_parsed) }
-
-            if !number_construct.is_empty() {
-                if let Ok(n) = number_construct.parse::<u32>() {
-                    let count_empty_lines = if is_last_line_empty { n } else { n-1 };
-                    for _ in 0..count_empty_lines {
-                        all_lines_parsed.push(vec![(self.x, false)]);
-                    }
-                } else {
-                    return Err("Error while parsing RLE file: Number parsing")
-                }
-            }
-        }
-
-        // Add lines parsed to final map
-        for i in 0..map.len() {
-            for j in 0..map[i].len() {
-                if all_lines_parsed[i].is_empty() {
-                    break
-                }
-
-                map[i][j] = all_lines_parsed[i][0].1;
-
-                if all_lines_parsed[i][0].0 > 1 {
-                    all_lines_parsed[i][0].0 -= 1;
-                } else {
-                    all_lines_parsed[i].remove(0);
-                }
-            }
-        }
-
-        Ok(CellMap::new(map)?)
+        Ok(CellMap::new(self.lines_to_map(&mut all_lines_parsed))?)
     }
 
     pub fn export(&self) -> String {
@@ -489,5 +489,27 @@ x = 36, y = 9, rule = B3/S23
 
     // Test RLE::file_to_cell_map
 
-    // TODO
+    #[test]
+    fn test_file_to_cell_map_1() {
+        let file_content = String::from("#C [[ ZOOM 16 GRID COLOR GRID 192 192 192 GRIDMAJOR 10 COLOR GRIDMAJOR 128 128 128 COLOR DEADRAMP 255 220 192 COLOR ALIVE 0 0 0 COLOR ALIVERAMP 0 0 0 COLOR DEAD 192 220 255 COLOR BACKGROUND 255 255 255 GPS 10 WIDTH 937 HEIGHT 600 ]]
+x = 12, y = 8, rule = B3/S23
+5bob2o$4bo6bo$3b2o3bo2bo$2obo5b2o$2obo5b2o$3b2o3bo2bo$4bo6bo$5bob2o!");
+
+        let map = vec![
+            vec![false, false, false, false, false, true, false, true, true, false, false, false],
+            vec![false, false, false, false, true, false, false, false, false, false, false, true],
+            vec![false, false, false, true, true, false, false, false, true, false, false, true],
+            vec![true, true, false, true, false, false, false, false, false, true, true, false],
+            vec![true, true, false, true, false, false, false, false, false, true, true, false],
+            vec![false, false, false, true, true, false, false, false, true, false, false, true],
+            vec![false, false, false, false, true, false, false, false, false, false, false, true],
+            vec![false, false, false, false, false, true, false, true, true, false, false, false],
+        ];
+
+        let result = RLE::file_to_cell_map(file_content).unwrap();
+
+        assert_eq!(result.w, 12);
+        assert_eq!(result.h, 8);
+        assert_eq!(result.actual_generation, map);
+    }
 }
