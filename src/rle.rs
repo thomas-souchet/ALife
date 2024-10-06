@@ -301,7 +301,7 @@ x = 36, y = 9, rule = B3/S23
 24bo$22bobo$12b2o6b2o12b2o$11bo3ao4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!");
 
         match RLE::parse(content) {
-            Ok(result) => panic!("The result should not be Ok"),
+            Ok(_) => panic!("The result should not be Ok"),
             Err(error) => assert_eq!(error, "Content line not found or incorrect. (Help: all content must be on one line)"),
         }
         Ok(())

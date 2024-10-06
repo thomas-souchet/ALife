@@ -1,7 +1,4 @@
-use std::error::Error;
-use std::{fs, mem};
-use std::ops::Index;
-use crate::rle::RLE;
+use std::mem;
 
 pub struct CellMap {
     pub w: u32,
@@ -11,9 +8,9 @@ pub struct CellMap {
 }
 
 impl CellMap {
-    // Utilities
 
-    fn trim(&mut self) {
+    /// Remove empty lines at the start and end of the figure
+    fn _trim(&mut self) {
         if self.actual_generation.len() > 0 {
             while !self.actual_generation[0].contains(&true) {
                 self.actual_generation.remove(0);
@@ -32,8 +29,9 @@ impl CellMap {
         self.h = self.actual_generation.len() as u32;
     }
 
-    // Methods
+    // ---------------------
 
+    /// Reduce the figure to the minimum size removing all the empty columns and lines
     pub fn auto_crop(&self) -> CellMap {
         let (mut start_y, mut end_y): (usize, usize) = ((self.h - 1) as usize, 0);
         let (mut start_x, mut end_x): (usize, usize) = ((self.w - 1) as usize, 0);
@@ -75,6 +73,7 @@ impl CellMap {
         }
     }
 
+    /// Create a new instance of a CellMap from a two-dimensional vector of booleans
     pub fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
         let col_size = source.len();
         if col_size == 0 {
@@ -94,27 +93,8 @@ impl CellMap {
         })
     }
 
-    fn from_rle(file_name: &str) -> Result<CellMap, &'static str> {
-        /*
-         * This method will be removed or the prototype will be modified
-         */
-        // File
-        if !file_name.contains(".rle") {
-            return Err("The input file must be a Run Length Encoded (.rle) file");
-        }
-        let content = fs::read_to_string(file_name).unwrap_or_else(|e| {
-            return e.to_string()
-        });
-        // RLE
-        let rle = RLE::parse(content)?;
-        Ok(rle.to_cell_map()?)
-    }
-
-    fn to_rle(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
-        panic!("TODO: Not implemented")
-    }
-
-    fn generate_next(&mut self) -> &Vec<Vec<bool>> {
+    /// Generate the next generation following the rule of the game of life
+    pub fn generate_next(&mut self) {
         for i in 0..self.actual_generation.len() {
             for j in 0..self.actual_generation[i].len() {
                 let (i, j) = (i as i32, j as i32);
@@ -140,8 +120,6 @@ impl CellMap {
         }
         // Swap pointers
         mem::swap(&mut self.actual_generation, &mut self.next_generation);
-
-        &self.actual_generation
     }
 }
 
@@ -155,6 +133,7 @@ mod tests {
     use super::*;
 
     // Test CellMap::new
+
     #[test]
     fn test_new_1() -> Result<(), &'static str> {
         let c = CellMap::new(
@@ -194,6 +173,7 @@ mod tests {
     }
 
     // Test CellMap.generate_next
+
     #[test]
     fn test_generate_next_figure() -> Result<(), String> {
         let mut c = CellMap::new(
@@ -203,9 +183,9 @@ mod tests {
                 vec![false, true, true]]
         )?;
 
-        let result = c.generate_next();
+        c.generate_next();
 
-        assert_eq!(result, &vec![
+        assert_eq!(c.actual_generation, vec![
             vec![true, true, false],
             vec![true, false, false],
             vec![true, true, true]
@@ -225,9 +205,9 @@ mod tests {
                 vec![false, false, false, false, false]]
         )?;
 
-        let result = c.generate_next();
+        c.generate_next();
 
-        assert_eq!(result, &vec![
+        assert_eq!(c.actual_generation, vec![
             vec![false, false, false, false, false],
             vec![false, false, false, false, false],
             vec![false, true, true, true, false],
@@ -249,9 +229,9 @@ mod tests {
                 vec![false, false, false, false, false]]
         )?;
 
-        let result = c.generate_next();
+        c.generate_next();
 
-        assert_eq!(result, &vec![
+        assert_eq!(c.actual_generation, vec![
             vec![false, false, false, false, false],
             vec![false, false, false, false, false],
             vec![false, true, false, true, false],
@@ -273,9 +253,9 @@ mod tests {
                 vec![false, false, false, false, false, false]]
         )?;
 
-        let result = c.generate_next();
+        c.generate_next();
 
-        assert_eq!(result, &vec![
+        assert_eq!(c.actual_generation, vec![
             vec![false, false, false, false, false, false],
             vec![false, false, true, true, false, false],
             vec![false, true, false, false, true, false],
@@ -298,9 +278,9 @@ mod tests {
                 vec![false, false, false, false, false, false]]
         )?;
 
-        let result = c.generate_next();
+        c.generate_next();
 
-        assert_eq!(result, &vec![
+        assert_eq!(c.actual_generation, vec![
             vec![false, false, false, false, false, false],
             vec![false, false, false, true, false, false],
             vec![false, true, false, false, true, false],
