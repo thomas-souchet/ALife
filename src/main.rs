@@ -1,17 +1,14 @@
-use std::{env, process};
+use std::process;
+use clap::Parser;
 
-use alife::config::Config;
+use alife::Args;
+
 
 fn main() {
-    // Collect args
-    let args: Vec<String> = env::args().collect();
-    let config = Config::new(&args).unwrap_or_else(|err| {
-        eprintln!("Problème rencontré lors de l'interprétation des arguments : {}", err);
-        process::exit(1);
-    });
+    let args = Args::parse();
 
-    if let Err(e) = alife::run(config) {
-        eprintln!("Erreur applicative : {}", e);
+    if let Err(e) = alife::run(args) {
+        eprintln!("Fatal error, {}", e);
         process::exit(1);
     }
 }
