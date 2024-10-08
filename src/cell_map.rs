@@ -9,6 +9,26 @@ pub struct CellMap {
 
 impl CellMap {
 
+    /// Add dead cells around the figure
+    fn expand(&mut self) {
+        self.actual_generation.insert(0, vec![false; self.w as usize]);
+        self.actual_generation.push(vec![false; self.w as usize]);
+
+        self.next_generation.insert(0, vec![false; self.w as usize]);
+        self.next_generation.push(vec![false; self.w as usize]);
+
+        for i in 0..self.actual_generation.len() {
+            self.actual_generation[i].insert(0, false);
+            self.actual_generation[i].push(false);
+
+            self.next_generation[i].insert(0, false);
+            self.next_generation[i].push(false);
+        }
+
+        self.w = self.w + 2;
+        self.h = self.actual_generation.len() as u32;
+    }
+
     /// Remove empty lines at the start and end of the figure
     fn _trim(&mut self) {
         if self.actual_generation.len() > 0 {
@@ -95,9 +115,21 @@ impl CellMap {
 
     /// Generate the next generation following the rule of the game of life
     pub fn generate_next(&mut self) {
+        // Detect if expand is necessary
+        if self.actual_generation[0].contains(&true) || self.actual_generation.last().unwrap().contains(&true) {
+            self.expand();
+        } else {
+            for i in 0..self.actual_generation.len() {
+                if self.actual_generation[i][0] == true || self.actual_generation[i].last().unwrap() == &true {
+                    self.expand()
+                }
+            }
+        }
+
         for i in 0..self.actual_generation.len() {
             for j in 0..self.actual_generation[i].len() {
                 let (i, j) = (i as i32, j as i32);
+                // Expand if nece
                 // Count alive cells
                 let mut alive = 0;
                 let coord = [(i-1, j-1), (i-1, j), (i-1, j+1), (i, j-1), (i, j+1), (i+1, j-1), (i+1, j), (i+1, j+1)];
@@ -186,9 +218,11 @@ mod tests {
         c.generate_next();
 
         assert_eq!(c.actual_generation, vec![
-            vec![true, true, false],
-            vec![true, false, false],
-            vec![true, true, true]
+            vec![false, false, false, false, false],
+            vec![false, true, true, false, false],
+            vec![false, true, false, false, false],
+            vec![false, true, true, true, false],
+            vec![false, false, false, false, false],
         ]);
         Ok(())
     }
@@ -322,5 +356,30 @@ mod tests {
         assert_eq!(cropped_c.h, 5);
         assert_eq!(cropped_c.next_generation.len(), 5);
         assert_eq!(cropped_c.next_generation[0].len(), 3);
+    }
+
+    // Test CellMap.expand
+
+    #[test]
+    fn test_expand_1() {
+        let mut c = CellMap::new(vec![
+            vec![false, true, false],
+            vec![false, false, true],
+            vec![true, true, true],
+        ]).unwrap();
+
+        c.expand();
+
+        assert_eq!(c.w, 5);
+        assert_eq!(c.h, 5);
+        assert_eq!(c.next_generation.len(), 5);
+        assert_eq!(c.next_generation[0].len(), 5);
+        assert_eq!(c.actual_generation, vec![
+            vec![false, false, false, false, false],
+            vec![false, false, true, false, false],
+            vec![false, false, false, true, false],
+            vec![false, true, true, true, false],
+            vec![false, false, false, false, false],
+        ])
     }
 }

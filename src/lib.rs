@@ -38,7 +38,8 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         return e.to_string()
     });
 
-    let mut cell_map = RLE::file_to_cell_map(content)?;
+    let rle = RLE::parse(content)?;
+    let mut cell_map = rle.to_cell_map()?;
 
     println!("Running simulation...");
 
@@ -46,8 +47,8 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         cell_map.generate_next();
     }
 
-    let exported_content = RLE::cell_map_to_file(&cell_map, None);
-    let exported_file_name = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d").to_string() + ".rle";
+    let exported_content = RLE::cell_map_to_file(&cell_map, Some(&rle.comments));
+    let exported_file_name = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".rle";
 
     let mut file = File::create(&exported_file_name)?;
     file.write_all(exported_content.as_bytes())?;
