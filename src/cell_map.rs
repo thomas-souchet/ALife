@@ -1,4 +1,12 @@
+use std::cmp::PartialEq;
 use std::mem;
+
+enum Direction {
+    Top,
+    Right,
+    Bottom,
+    Left,
+}
 
 pub struct CellMap {
     pub w: u32,
@@ -7,26 +15,44 @@ pub struct CellMap {
     next_generation: Vec<Vec<bool>>,
 }
 
+impl PartialEq for Direction {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Direction::Top, Direction::Top) => true,
+            (Direction::Right, Direction::Right) => true,
+            (Direction::Bottom, Direction::Bottom) => true,
+            (Direction::Left, Direction::Left) => true,
+            _ => false,
+        }
+    }
+}
+
 impl CellMap {
 
     /// Add dead cells around the figure
-    fn expand(&mut self) {
-        self.actual_generation.insert(0, vec![false; self.w as usize]);
-        self.actual_generation.push(vec![false; self.w as usize]);
-
-        self.next_generation.insert(0, vec![false; self.w as usize]);
-        self.next_generation.push(vec![false; self.w as usize]);
-
-        for i in 0..self.actual_generation.len() {
-            self.actual_generation[i].insert(0, false);
-            self.actual_generation[i].push(false);
-
-            self.next_generation[i].insert(0, false);
-            self.next_generation[i].push(false);
+    fn expand(&mut self, all_d: &Vec<Direction>) {
+        if all_d.contains(&Direction::Top) {
+            self.actual_generation.insert(0, vec![false; self.w as usize]);
+            self.next_generation.insert(0, vec![false; self.w as usize]);
+            self.h += 1;
         }
-
-        self.w = self.w + 2;
-        self.h = self.actual_generation.len() as u32;
+        if all_d.contains(&Direction::Bottom) {
+            self.actual_generation.push(vec![false; self.w as usize]);
+            self.next_generation.push(vec![false; self.w as usize]);
+            self.h += 1;
+        }
+        for i in 0..self.actual_generation.len() {
+            if all_d.contains(&Direction::Right) {
+                self.actual_generation[i].push(false);
+                self.next_generation[i].push(false);
+                if i == 0 { self.w += 1 }
+            }
+            if all_d.contains(&Direction::Left) {
+                self.actual_generation[i].insert(0, false);
+                self.next_generation[i].insert(0, false);
+                if i == 0 { self.w += 1 }
+            }
+        }
     }
 
     /// Remove empty lines at the start and end of the figure
@@ -116,20 +142,25 @@ impl CellMap {
     /// Generate the next generation following the rule of the game of life
     pub fn generate_next(&mut self) {
         // Detect if expand is necessary
-        if self.actual_generation[0].contains(&true) || self.actual_generation.last().unwrap().contains(&true) {
-            self.expand();
-        } else {
-            for i in 0..self.actual_generation.len() {
-                if self.actual_generation[i][0] == true || self.actual_generation[i].last().unwrap() == &true {
-                    self.expand()
-                }
-            }
+        let mut all_directions = vec![];
+        if self.actual_generation[0].contains(&true) {
+            all_directions.push(Direction::Top);
         }
+        if self.actual_generation.last().map_or(false, |row| row.contains(&true)) {
+            all_directions.push(Direction::Bottom);
+        }
+        if self.actual_generation.iter().any(|row| row.first() == Some(&true)) {
+            all_directions.push(Direction::Left);
+        }
+        if self.actual_generation.iter().any(|row| row.last() == Some(&true)) {
+            all_directions.push(Direction::Right);
+        }
+        self.expand(&all_directions);
+
 
         for i in 0..self.actual_generation.len() {
             for j in 0..self.actual_generation[i].len() {
                 let (i, j) = (i as i32, j as i32);
-                // Expand if nece
                 // Count alive cells
                 let mut alive = 0;
                 let coord = [(i-1, j-1), (i-1, j), (i-1, j+1), (i, j-1), (i, j+1), (i+1, j-1), (i+1, j), (i+1, j+1)];
@@ -368,18 +399,16 @@ mod tests {
             vec![true, true, true],
         ]).unwrap();
 
-        c.expand();
+        c.expand(&vec![Direction::Left]);
 
-        assert_eq!(c.w, 5);
-        assert_eq!(c.h, 5);
-        assert_eq!(c.next_generation.len(), 5);
-        assert_eq!(c.next_generation[0].len(), 5);
+        assert_eq!(c.w, 4);
+        assert_eq!(c.h, 3);
+        assert_eq!(c.next_generation.len(), 3);
+        assert_eq!(c.next_generation[0].len(), 4);
         assert_eq!(c.actual_generation, vec![
-            vec![false, false, false, false, false],
-            vec![false, false, true, false, false],
-            vec![false, false, false, true, false],
-            vec![false, true, true, true, false],
-            vec![false, false, false, false, false],
+            vec![false, false, true, false],
+            vec![false, false, false, true],
+            vec![false, true, true, true],
         ])
     }
 }
