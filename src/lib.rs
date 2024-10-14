@@ -8,6 +8,7 @@ use crate::rle::RLE;
 
 mod cell_map;
 mod rle;
+mod img_cell;
 
 /// Alife is a program that simulates the Conway's Game of Life.
 /// It can read RLE files to generate images, GIF and RLE files.
