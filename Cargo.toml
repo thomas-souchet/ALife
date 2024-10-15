@@ -7,3 +7,5 @@ edition = "2021"
 regex = "1.10.6"
 clap = { version = "4.5.19", features = ["derive"] }
 chrono = "0.4.38"
+image = "0.25.2"
+imageproc = "0.25.0"

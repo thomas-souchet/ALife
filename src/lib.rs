@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use clap::{arg, Parser};
 use chrono::Local;
+use crate::img_cell::ImgCell;
 use crate::rle::RLE;
 
 mod cell_map;
@@ -54,20 +55,25 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let exported_content = RLE::cell_map_to_file(&cell_map, Some(&rle.comments));
 
     if !args.output {
-        let mut exported_file_name = String::new();
+        let mut exported_file_name_rle = String::new();
+        let mut exported_file_name_png = String::new();
         if let Some(file_stem) = args.file.file_stem() {
             if let Some(file_stem_str) = file_stem.to_str() {
-                exported_file_name = format!("{}-gen{}.rle", file_stem_str, args.gen);
+                exported_file_name_rle = format!("{}-gen{}.rle", file_stem_str, args.gen);
+                exported_file_name_png = format!("{}-gen{}.png", file_stem_str, args.gen);
             }
         }
-        if exported_file_name.is_empty() {
-            exported_file_name = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".rle";
+        if exported_file_name_rle.is_empty() || exported_file_name_png.is_empty() {
+            exported_file_name_rle = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".rle";
+            exported_file_name_rle = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".png";
         }
 
-        let mut file = File::create(&exported_file_name)?;
+        let mut file = File::create(&exported_file_name_rle)?;
         file.write_all(exported_content.as_bytes())?;
 
-        eprintln!("Successfully created {}", &exported_file_name);
+        ImgCell::from_cell_map(&cell_map, &exported_file_name_png, None);
+
+        eprintln!("Successfully created {} and {}", &exported_file_name_rle, &exported_file_name_png);
     } else {
         eprintln!("Result of the simulation after {} generations:\n", args.gen);
         println!("{}", exported_content);
