@@ -69,9 +69,11 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         }
 
         let mut file = File::create(&exported_file_name_rle)?;
-        file.write_all(exported_content.as_bytes())?;
+        let img_cell = ImgCell::from_cell_map(&cell_map, None, Some(true));
 
-        ImgCell::from_cell_map(&cell_map, &exported_file_name_png, None);
+        file.write_all(exported_content.as_bytes())?;
+        img_cell.img.save(&exported_file_name_png)?;
+
 
         eprintln!("Successfully created {} and {}", &exported_file_name_rle, &exported_file_name_png);
     } else {
