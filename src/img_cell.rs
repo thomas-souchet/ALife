@@ -30,9 +30,9 @@ impl ImgCell {
     /// Create an image from a cell map
     pub fn from_cell_map(c: &CellMap, inverted: Option<bool>, cropped: Option<bool>) -> ImgCell {
         let mut c = c;
-        let grid_color = Rgb([70, 70, 70]);
+        let grid_color = Rgb([90, 90, 90]);
 
-        let inverted = inverted.unwrap_or(true);
+        let inverted = inverted.unwrap_or(false);
         let cropped = cropped.unwrap_or(true);
         let cropped_source: CellMap;
 

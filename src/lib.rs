@@ -67,7 +67,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         }
 
         let mut file = File::create(format!("{}.rle", &exported_file_name))?;
-        let img_cell = ImgCell::from_cell_map(&cell_map, Some(true), Some(true));
+        let img_cell = ImgCell::from_cell_map(&cell_map, None, Some(true));
 
         file.write_all(exported_content.as_bytes())?;
         img_cell.img.save(format!("{}.png", &exported_file_name))?;
