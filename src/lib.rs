@@ -55,27 +55,25 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let exported_content = RLE::cell_map_to_file(&cell_map, Some(&rle.comments));
 
     if !args.output {
-        let mut exported_file_name_rle = String::new();
-        let mut exported_file_name_png = String::new();
+        let date = Local::now().format("%Y-%m-%d_%H-%M").to_string();
+        let mut exported_file_name = String::new();
         if let Some(file_stem) = args.file.file_stem() {
             if let Some(file_stem_str) = file_stem.to_str() {
-                exported_file_name_rle = format!("{}-gen{}.rle", file_stem_str, args.gen);
-                exported_file_name_png = format!("{}-gen{}.png", file_stem_str, args.gen);
+                exported_file_name = format!("Alife-{}-{}-{}", args.gen, file_stem_str, &date);
             }
         }
-        if exported_file_name_rle.is_empty() || exported_file_name_png.is_empty() {
-            exported_file_name_rle = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".rle";
-            exported_file_name_rle = "alife_export_".to_string() + &Local::now().format("%Y-%m-%d_%H-%M").to_string() + "" + ".png";
+        if exported_file_name.is_empty() {
+            exported_file_name = format!("Alife-{}-export-{}", args.gen, &date);
         }
 
-        let mut file = File::create(&exported_file_name_rle)?;
+        let mut file = File::create(format!("{}.rle", &exported_file_name))?;
         let img_cell = ImgCell::from_cell_map(&cell_map, Some(true), Some(true));
 
         file.write_all(exported_content.as_bytes())?;
-        img_cell.img.save(&exported_file_name_png)?;
+        img_cell.img.save(format!("{}.png", &exported_file_name))?;
 
 
-        eprintln!("Successfully created {} and {}", &exported_file_name_rle, &exported_file_name_png);
+        eprintln!("Successfully created {} and {}", format!("{}.rle", &exported_file_name), format!("{}.png", &exported_file_name));
     } else {
         eprintln!("Result of the simulation after {} generations:\n", args.gen);
         println!("{}", exported_content);
