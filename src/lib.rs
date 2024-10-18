@@ -69,7 +69,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         }
 
         let mut file = File::create(&exported_file_name_rle)?;
-        let img_cell = ImgCell::from_cell_map(&cell_map, None, Some(true));
+        let img_cell = ImgCell::from_cell_map(&cell_map, Some(true), Some(true));
 
         file.write_all(exported_content.as_bytes())?;
         img_cell.img.save(&exported_file_name_png)?;

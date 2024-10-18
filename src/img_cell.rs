@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use image::{ImageBuffer, Rgb, RgbImage};
 use imageproc::drawing;
 use imageproc::rect::Rect;
@@ -9,10 +8,11 @@ pub struct ImgCell {
 }
 
 impl ImgCell {
-    const  MIN_CELL_SIZE: u32 = 6;
-    const MAX_CELL_SIZE: u32 = 20;
-    const LIMIT_MIN : u32 = 10;
-    const LIMIT_MAX : u32 = 200;
+    const  MIN_CELL_SIZE: u32 = 5;
+    const MAX_CELL_SIZE: u32 = 15;
+    const LIMIT_MIN : u32 = 5;
+    const LIMIT_MAX : u32 = 100;
+    const GRID_LIMIT : u32 = 300;
 
     fn calculate_cell_size(w: u32, h: u32) -> u32 {
         let v = w.max(h);
@@ -23,7 +23,7 @@ impl ImgCell {
                 let coef = (Self::MIN_CELL_SIZE as f64 - Self::MAX_CELL_SIZE as f64) / (Self::LIMIT_MAX - Self::LIMIT_MIN) as f64;
                 (coef * v as f64 + (Self::LIMIT_MIN as f64 * -coef + Self::MAX_CELL_SIZE as f64)) as u32
             },
-            _ => 1,
+            _ => Self::MIN_CELL_SIZE,
         }
     }
 
@@ -41,8 +41,9 @@ impl ImgCell {
             c = &cropped_source;
         }
 
-        let cell_size: u32 = Self::calculate_cell_size(c.w, c.h);
-        let display_grid = c.w.max(c.h) <= Self::LIMIT_MAX;
+        let mut cell_size: u32 = Self::calculate_cell_size(c.w, c.h);
+        let display_grid = c.w.max(c.h) <= Self::GRID_LIMIT;
+        if !display_grid { cell_size = 1 }
 
         let mut width = c.w * cell_size;
         let mut height = c.h * cell_size;
@@ -105,7 +106,7 @@ mod tests {
     fn generate_vec(n: u32, pos: bool) -> Vec<bool> {
         let mut v = Vec::new();
         for i in 0..n {
-            if i%2 == 0 {
+            if i%3 == 0 {
                 v.push(pos)
             } else {
                 v.push(!pos)
@@ -141,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_from_cell_map_2() {
-        let c = CellMap::new(generate_map(10)).unwrap();
+        let c = CellMap::new(generate_map(5)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
         i.img.save("test_2.png").unwrap()
@@ -149,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_from_cell_map_3() {
-        let c = CellMap::new(generate_map(95)).unwrap();
+        let c = CellMap::new(generate_map(47)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
         i.img.save("test_3.png").unwrap()
@@ -157,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_from_cell_map_4() {
-        let c = CellMap::new(generate_map(200)).unwrap();
+        let c = CellMap::new(generate_map(100)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
         i.img.save("test_4.png").unwrap()
@@ -165,9 +166,17 @@ mod tests {
 
     #[test]
     fn test_from_cell_map_5() {
-        let c = CellMap::new(generate_map(1000)).unwrap();
+        let c = CellMap::new(generate_map(300)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
         i.img.save("test_5.png").unwrap()
+    }
+
+    #[test]
+    fn test_from_cell_map_6() {
+        let c = CellMap::new(generate_map(600)).unwrap();
+
+        let i = ImgCell::from_cell_map(&c, None, None);
+        i.img.save("test_6.png").unwrap()
     }
 }
