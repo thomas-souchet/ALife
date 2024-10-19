@@ -168,12 +168,17 @@ impl RLE {
             Some(desc) => Self::parse_config_string(desc.trim()),
             None => return Err("Header line not found"),
         }?;
+        // Group data
+        let mut group: Vec<&str> = file_content.lines().collect();
+        group.remove(0);
+        file_content = group.join("");
         // Verify and extract data
-        let re = Regex::new(r"^((\s?[0-9]*[bo]\s?)+\s?[0-9]?\s?[$]?)+\s?!$").unwrap();
-        let data = match file_content.lines().nth(1) {
-            Some(l) => if re.is_match(l) { l } else { return Err("Content line not found or incorrect. (Help: all content must be on one line)") },
-            None => return Err("Content line not found"),
-        }.to_string();
+        let re = Regex::new(r"^((\s?[0-9]*[bo]\s?)*\s?[0-9]*\s?[$]?)+\s?!$").unwrap();
+        let data = if re.is_match(&file_content) {
+            file_content
+        } else {
+            return Err("Content not found or incorrect.")
+        };
 
         Ok(RLE { comments, x, y, rule, data })
     }
@@ -265,7 +270,9 @@ mod tests {
 #C This was the first gun discovered.
 #C As its name suggests, it was discovered by Bill Gosper.
 x = 36, y = 9, rule = B3/S23
-24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!");
+24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2
+o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5
+bo7bo$11bo3bo$12b2o!");
 
         match RLE::parse(content) {
             Ok(result) => {
@@ -305,7 +312,29 @@ x = 36, y = 9, rule = B3/S23
 
         match RLE::parse(content) {
             Ok(_) => panic!("The result should not be Ok"),
-            Err(error) => assert_eq!(error, "Content line not found or incorrect. (Help: all content must be on one line)"),
+            Err(error) => assert_eq!(error, "Content not found or incorrect."),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_4() -> Result<(), &'static str> {
+        let content = String::from("#N 20cellquadraticgrowth.rle
+#O dani, 2022
+#C https://conwaylife.com/wiki/20-cell_quadratic_growth
+#C https://www.conwaylife.com/patterns/20cellquadraticgrowth.rle
+x = 97, y = 33, rule = B3/S23
+94$92bobo$94b2o6$88b3o11$96bo$95b2o8$3bob2o$2bo3bo$bo$bo$obo!");
+
+        match RLE::parse(content) {
+            Ok(result) => {
+                assert_eq!(result.comments.len(), 4);
+                assert_eq!(result.x, 97);
+                assert_eq!(result.y, 33);
+                assert_eq!(result.rule, Some("B3/S23".to_string()));
+                assert_eq!(result.data, "94$92bobo$94b2o6$88b3o11$96bo$95b2o8$3bob2o$2bo3bo$bo$bo$obo!".to_string())
+            },
+            Err(error) => panic!("{}", error),
         }
         Ok(())
     }
