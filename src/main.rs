@@ -8,7 +8,7 @@ fn main() {
     let args = Args::parse();
 
     if let Err(e) = alife::run(args) {
-        eprintln!("Fatal error, {}", e);
+        eprintln!("Fatal error => {}", e);
         process::exit(1);
     }
 }

@@ -29,18 +29,18 @@ pub struct Args {
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     if !args.file.is_file() {
-        return Err(Box::<dyn Error>::from("value of file is invalid"))
+        return Err(Box::<dyn Error>::from("[File reader] No such file"))
     }
     if let Some(ext) = args.file.extension() {
         if ext != "rle" {
-            return Err(Box::<dyn Error>::from("the file supplied must be a file with the .rle extension"))
+            return Err(Box::<dyn Error>::from("[File reader] The file supplied must be a file with the .rle extension"))
         }
     } else {
-        return Err(Box::<dyn Error>::from("the file extension must be provided"))
+        return Err(Box::<dyn Error>::from("[File reader] The file extension must be provided"))
     }
     // Read file
     let content = fs::read_to_string(&args.file).unwrap_or_else(|e| {
-        return e.to_string()
+        return "[File reader] ".to_string() + &e.to_string()
     });
 
     let rle = RLE::parse(content)?;

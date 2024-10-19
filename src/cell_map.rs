@@ -123,12 +123,12 @@ impl CellMap {
     pub fn new(source: Vec<Vec<bool>>) -> Result<CellMap, &'static str> {
         let col_size = source.len();
         if col_size == 0 {
-            return Err("The source can't be empty")
+            return Err("[CellMap creation] The source can't be empty")
         }
         let row_size = source[0].len();
         for r in source.iter() {
             if r.len() != row_size {
-                return Err("All rows must have the same size")
+                return Err("[CellMap creation] All rows must have the same size")
             }
         }
         Ok (CellMap {
@@ -219,7 +219,7 @@ mod tests {
     fn test_new_2() {
         match CellMap::new(vec![]) {
             Ok(_) => panic!("The result should not be Ok"),
-            Err(e) => assert_eq!(e, "The source can't be empty"),
+            Err(e) => assert_eq!(e, "[CellMap creation] The source can't be empty"),
         }
     }
 
@@ -231,7 +231,7 @@ mod tests {
             vec![true, false],
         ]) {
             Ok(_) => panic!("The result should not be Ok"),
-            Err(e) => assert_eq!(e, "All rows must have the same size"),
+            Err(e) => assert_eq!(e, "[CellMap creation] All rows must have the same size"),
         }
     }
 

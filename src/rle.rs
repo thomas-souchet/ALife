@@ -40,7 +40,7 @@ impl RLE {
 
             Ok((x, y, rule))
         } else {
-            Err("Header line not found or incorrect")
+            Err("[RLE decoder] Header line not found or incorrect")
         }
     }
 
@@ -128,7 +128,7 @@ impl RLE {
                 } else if c == 'b' || c == 'o' {
                     let factor: u32 = if !number_construct.is_empty() {
                         number_construct.parse()
-                            .map_err(|_| "Error while parsing RLE file: Number parsing")?
+                            .map_err(|_| "[RLE decoder] Error while parsing RLE file: Number parsing")?
                     } else {
                         1
                     };
@@ -136,7 +136,7 @@ impl RLE {
                     line_parsed.push((factor, if c == 'o' { true } else { false }));
                     number_construct = String::new();
                 } else {
-                    return Err("Error while parsing RLE file: Unknown character")
+                    return Err("[RLE decoder] Error while parsing RLE file: Unknown character")
                 }
             }
 
@@ -147,7 +147,7 @@ impl RLE {
 
             if !number_construct.is_empty() {
                 let n = number_construct.parse::<u32>()
-                    .map_err(|_| "Error while parsing RLE file: Number parsing")?;
+                    .map_err(|_| "[RLE decoder] Error while parsing RLE file: Number parsing")?;
 
                 let count_empty_lines = if is_last_line_empty { n } else { n - 1 };
                 all_lines_parsed.extend(std::iter::repeat(vec![(self.x, false)]).take(count_empty_lines as usize));
@@ -166,7 +166,7 @@ impl RLE {
         // Extract information
         let (x, y, rule): (u32, u32, Option<String>) =  match file_content.lines().nth(0) {
             Some(desc) => Self::parse_config_string(desc.trim()),
-            None => return Err("Header line not found"),
+            None => return Err("[RLE decoder] Header line not found"),
         }?;
         // Group data
         let mut group: Vec<&str> = file_content.lines().collect();
@@ -177,7 +177,7 @@ impl RLE {
         let data = if re.is_match(&file_content) {
             file_content
         } else {
-            return Err("Content not found or incorrect.")
+            return Err("[RLE decoder] Content not found or incorrect.")
         };
 
         Ok(RLE { comments, x, y, rule, data })
@@ -312,7 +312,7 @@ bo7bo$11bo3bo$12b2o!");
 
         match RLE::parse(content) {
             Ok(_) => panic!("The result should not be Ok"),
-            Err(error) => assert_eq!(error, "Content not found or incorrect."),
+            Err(error) => assert_eq!(error, "[RLE decoder] Content not found or incorrect."),
         }
         Ok(())
     }
