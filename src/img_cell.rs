@@ -99,9 +99,23 @@ impl ImgCell {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::Path;
     use super::*;
 
-    // Test ImgCell::from_cell_map
+    const PATH : &str = "tests/samples";
+
+    /// Test init before each
+    fn initialize(path: &str) {
+        let path = Path::new(path);
+        if !path.exists() {
+            fs::create_dir_all(path).expect("Failed to create directories");
+        } else if !path.is_dir() {
+            panic!("Path already exists but it's not a directory");
+        }
+    }
+
+    // Functions to generate a map
 
     fn generate_vec(n: u32, pos: bool) -> Vec<bool> {
         let mut v = Vec::new();
@@ -127,8 +141,11 @@ mod tests {
         v
     }
 
+    // Test ImgCell::from_cell_map
+
     #[test]
     fn test_from_cell_map_1() {
+        initialize(PATH);
         let c = CellMap::new(
             vec![
                 vec![false, true, false],
@@ -137,46 +154,51 @@ mod tests {
         ).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_1.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_1.png").unwrap()
     }
 
     #[test]
     fn test_from_cell_map_2() {
+        initialize(PATH);
         let c = CellMap::new(generate_map(5)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_2.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_2.png").unwrap()
     }
 
     #[test]
     fn test_from_cell_map_3() {
+        initialize(PATH);
         let c = CellMap::new(generate_map(47)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_3.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_3.png").unwrap()
     }
 
     #[test]
     fn test_from_cell_map_4() {
+        initialize(PATH);
         let c = CellMap::new(generate_map(100)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_4.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_4.png").unwrap()
     }
 
     #[test]
     fn test_from_cell_map_5() {
+        initialize(PATH);
         let c = CellMap::new(generate_map(300)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_5.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_5.png").unwrap()
     }
 
     #[test]
     fn test_from_cell_map_6() {
+        initialize(PATH);
         let c = CellMap::new(generate_map(600)).unwrap();
 
         let i = ImgCell::from_cell_map(&c, None, None);
-        i.img.save("test_6.png").unwrap()
+        i.img.save(PATH.to_string() + "/img_cell_test_6.png").unwrap()
     }
 }
